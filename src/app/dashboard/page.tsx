@@ -18,27 +18,37 @@ export default function DashboardPage() {
     coverLetter: string;
   } | null>(null);
   const [error, setError] = useState("");
+  const [resumeText, setResumeText] = useState("");
+  const [parsingFile, setParsingFile] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const handleFileDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const f = e.dataTransfer.files[0];
     if (f && (f.type.includes("pdf") || f.type.includes("document"))) {
       setFile(f);
+      extractFile(f);
     }
   };
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
-    if (f) setFile(f);
+    if (f) {
+      setFile(f);
+      extractFile(f);
+    }
   };
 
-  const readFileContent = async (file: File): Promise<string> => {
+  const extractFile = async (f: File) => {
+    setParsingFile(true);
+    setResumeText("");
     try {
-      return await extractTextFromFile(file);
+      const text = await extractTextFromFile(f);
+      setResumeText(text);
     } catch {
-      // Fallback: try plain text
-      return file.text();
+      setResumeText("[Could not extract text from this file]");
     }
+    setParsingFile(false);
   };
 
   const handleSubmit = async () => {
@@ -55,12 +65,11 @@ export default function DashboardPage() {
     setLoading(true);
 
     try {
-      const resumeText = await readFileContent(file);
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          resumeText,
+          resumeText: resumeText,
           jobDescription: jobDescription.trim(),
         }),
       });
@@ -201,11 +210,15 @@ export default function DashboardPage() {
                   <p className="font-medium text-gray-900">{file.name}</p>
                   <p className="mt-1 text-sm text-gray-500">
                     {(file.size / 1024).toFixed(1)} KB
+                    {parsingFile && " • Parsing..."}
+                    {!parsingFile && resumeText && " • Parsed ✓"}
                   </p>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       setFile(null);
+                      setResumeText("");
+                      setPreviewOpen(false);
                     }}
                     className="mt-3 text-sm text-red-500 hover:text-red-700"
                   >
@@ -247,6 +260,25 @@ export default function DashboardPage() {
               />
             </div>
           </div>
+
+          {/* Resume preview */}
+          {file && resumeText && (
+            <div className="mt-6">
+              <button
+                onClick={() => setPreviewOpen(!previewOpen)}
+                className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900"
+              >
+                <FileText className="h-4 w-4" />
+                {previewOpen ? "Hide" : "Preview"} resume text ({resumeText.split(" ").length} words)
+                <span className="text-xs text-gray-400">{previewOpen ? "▲" : "▼"}</span>
+              </button>
+              {previewOpen && (
+                <div className="mt-2 max-h-60 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 p-4 text-xs leading-relaxed text-gray-600">
+                  <pre className="whitespace-pre-wrap font-sans">{resumeText}</pre>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Error */}
           {error && (
@@ -372,6 +404,8 @@ export default function DashboardPage() {
                   onClick={() => {
                     setResult(null);
                     setFile(null);
+                    setResumeText("");
+                    setPreviewOpen(false);
                     setJobDescription("");
                   }}
                   className="text-sm font-medium text-primary-600 hover:text-primary-800"
