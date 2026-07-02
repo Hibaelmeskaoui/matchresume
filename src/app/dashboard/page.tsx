@@ -94,11 +94,76 @@ export default function DashboardPage() {
     });
   };
 
-  const downloadAsPdf = (content: string, filename: string) => {
-    // Simple text fallback — real PDF gen would use an API
-    const text = generatePlainText(content);
-    const blob = new Blob([text], { type: "text/plain" });
-    saveAs(blob, filename.replace(".pdf", ".txt"));
+  const downloadAsPdf = async (content: string, filename:string) => {
+    const { PDFDocument, StandardFonts } = await import("pdf-lib");
+
+    const doc = await PDFDocument.create();
+    const font = await doc.embedFont(StandardFonts.Helvetica);
+    const boldFont = await doc.embedFont(StandardFonts.HelveticaBold);
+
+    const fontSize = 11;
+    const boldSize = 14;
+    const margin = 50;
+    const pageWidth = 595; // A4
+    const pageHeight = 842;
+    const maxWidth = pageWidth - margin * 2;
+    const lineHeight = fontSize * 1.5;
+
+    // Split into lines with word wrapping
+    const words = content.split(" ");
+    const lines: { text: string; bold: boolean }[] = [];
+    let currentLine = "";
+
+    for (const word of words) {
+      const isHeader = word.startsWith("**") && word.endsWith("**");
+      const displayWord = word.replace(/\*\*/g, "");
+      const testLine = currentLine ? currentLine + " " + displayWord : displayWord;
+      const width = font.widthOfTextAtSize(testLine, fontSize);
+
+      if (width > maxWidth && currentLine) {
+        lines.push({ text: currentLine.trim(), bold: false });
+        currentLine = displayWord;
+      } else {
+        currentLine = testLine;
+      }
+
+      if (isHeader) {
+        lines.push({ text: currentLine.trim().replace(/\*\*/g, ""), bold: true });
+        currentLine = "";
+      }
+    }
+    if (currentLine.trim()) {
+      lines.push({ text: currentLine.trim(), bold: false });
+    }
+
+    // Render pages
+    let page = doc.addPage([pageWidth, pageHeight]);
+    let y = pageHeight - margin;
+
+    for (const line of lines) {
+      const f = line.bold ? boldFont : font;
+      const s = line.bold ? boldSize : fontSize;
+      const h = line.bold ? s * 1.4 : lineHeight;
+
+      if (y - h < margin) {
+        page = doc.addPage([pageWidth, pageHeight]);
+        y = pageHeight - margin;
+      }
+
+      page.drawText(line.text, {
+        x: margin,
+        y: y - h,
+        size: s,
+        font: f,
+        color: { r: 0, g: 0, b: 0 } as any,
+      });
+
+      y -= h + (line.bold ? 6 : 2);
+    }
+
+    const pdfBytes = await doc.save();
+    const blob = new Blob([pdfBytes as BlobPart], { type: "application/pdf" });
+    saveAs(blob, filename);
   };
 
   return (
