@@ -7,7 +7,7 @@ export default function Footer() {
         <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-500">
-              Built with 🦎 for job seekers
+              Built with Splic for job seekers
             </span>
           </div>
           <div className="flex gap-8">

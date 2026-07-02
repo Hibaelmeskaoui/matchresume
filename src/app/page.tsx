@@ -45,12 +45,12 @@ export default function Home() {
                   Tailor Your Resume Now
                   <ArrowRight className="h-4 w-4" />
                 </Link>
-                <Link
+                <a
                   href="#how-it-works"
                   className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-8 py-3.5 text-base font-semibold text-gray-700 transition-all hover:bg-gray-50 hover:shadow-md"
                 >
                   See How It Works
-                </Link>
+                </a>
               </div>
               <div className="mt-8 flex items-center justify-center gap-6 text-sm text-gray-500">
                 <span className="flex items-center gap-1.5">
