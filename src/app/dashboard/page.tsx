@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Upload, Link2, FileText, Download, Sparkles, Loader2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { generateDocx, generatePlainText } from "@/lib/documents";
+import { extractTextFromFile } from "@/lib/file-parser";
 import { saveAs } from "file-saver";
 
 export default function DashboardPage() {
@@ -33,12 +34,12 @@ export default function DashboardPage() {
   };
 
   const readFileContent = async (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsText(file);
-    });
+    try {
+      return await extractTextFromFile(file);
+    } catch {
+      // Fallback: try plain text
+      return file.text();
+    }
   };
 
   const handleSubmit = async () => {
