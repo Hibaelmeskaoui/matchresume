@@ -3,7 +3,7 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useState } from "react";
-import { Upload, Link2, FileText, Download, Sparkles, Loader2, AlertCircle } from "lucide-react";
+import { Upload, FileText, Download, Sparkles, Loader2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { generateDocx, generatePlainText } from "@/lib/documents";
 import { extractTextFromFile } from "@/lib/file-parser";
@@ -11,7 +11,6 @@ import { saveAs } from "file-saver";
 
 export default function DashboardPage() {
   const [file, setFile] = useState<File | null>(null);
-  const [jobLink, setJobLink] = useState("");
   const [jobDescription, setJobDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{
@@ -47,8 +46,8 @@ export default function DashboardPage() {
       setError("Please upload a resume");
       return;
     }
-    if (!jobLink && !jobDescription.trim()) {
-      setError("Please paste a job link or description");
+    if (!jobDescription.trim()) {
+      setError("Please paste the job description");
       return;
     }
 
@@ -57,14 +56,12 @@ export default function DashboardPage() {
 
     try {
       const resumeText = await readFileContent(file);
-      const desc = jobDescription.trim() || `Job link: ${jobLink}`;
-
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           resumeText,
-          jobDescription: desc,
+          jobDescription: jobDescription.trim(),
         }),
       });
 
@@ -170,34 +167,19 @@ export default function DashboardPage() {
               />
             </div>
 
-            {/* Job input */}
-            <div className="space-y-4">
-              <div>
-                <label className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700">
-                  <Link2 className="h-4 w-4" />
-                  Job Link (optional)
-                </label>
-                <input
-                  type="url"
-                  placeholder="https://linkedin.com/jobs/..."
-                  value={jobLink}
-                  onChange={(e) => setJobLink(e.target.value)}
-                  className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm placeholder-gray-400 transition-all focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-100"
-                />
-              </div>
-              <div>
-                <label className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700">
-                  <FileText className="h-4 w-4" />
-                  Or paste the job description
-                </label>
-                <textarea
-                  rows={6}
-                  placeholder="Paste the full job description here..."
-                  value={jobDescription}
-                  onChange={(e) => setJobDescription(e.target.value)}
-                  className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm placeholder-gray-400 transition-all focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-100"
-                />
-              </div>
+            {/* Job description */}
+            <div>
+              <label className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700">
+                <FileText className="h-4 w-4" />
+                Job Description
+              </label>
+              <textarea
+                rows={10}
+                placeholder="Paste the full job description here..."
+                value={jobDescription}
+                onChange={(e) => setJobDescription(e.target.value)}
+                className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm placeholder-gray-400 transition-all focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-100"
+              />
             </div>
           </div>
 
@@ -325,7 +307,6 @@ export default function DashboardPage() {
                   onClick={() => {
                     setResult(null);
                     setFile(null);
-                    setJobLink("");
                     setJobDescription("");
                   }}
                   className="text-sm font-medium text-primary-600 hover:text-primary-800"
