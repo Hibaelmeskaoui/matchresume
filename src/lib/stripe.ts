@@ -32,6 +32,8 @@ export async function createCheckoutSession(
   userId: string,
   userEmail: string
 ) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://matchresume.vercel.app";
+
   const session = await getStripe().checkout.sessions.create({
     mode: priceId === PRICES.oneTime.id ? "payment" : "subscription",
     payment_method_types: ["card"],
@@ -46,8 +48,8 @@ export async function createCheckoutSession(
     metadata: {
       userId,
     },
-    success_url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/dashboard?success=true`,
-    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/pricing?canceled=true`,
+    success_url: `${appUrl}/dashboard?payment=success`,
+    cancel_url: `${appUrl}/pricing?payment=canceled`,
   });
 
   return session;

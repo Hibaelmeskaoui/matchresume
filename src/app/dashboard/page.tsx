@@ -2,7 +2,7 @@
 
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Upload, FileText, Download, Sparkles, Loader2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { generateDocx, generatePlainText } from "@/lib/documents";
@@ -21,6 +21,20 @@ export default function DashboardPage() {
   const [resumeText, setResumeText] = useState("");
   const [parsingFile, setParsingFile] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [subscription, setSubscription] = useState<{
+    subscribed: boolean;
+    plan: string;
+    resumesLeft?: number;
+  } | null>(null);
+  const [checkingSub, setCheckingSub] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/check-subscription")
+      .then((r) => r.json())
+      .then((data) => setSubscription(data))
+      .catch(() => setSubscription({ subscribed: false, plan: "none" }))
+      .finally(() => setCheckingSub(false));
+  }, []);
 
   const handleFileDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -58,6 +72,11 @@ export default function DashboardPage() {
     }
     if (!jobDescription.trim()) {
       setError("Please paste the job description");
+      return;
+    }
+
+    if (!subscription?.subscribed) {
+      setError("Please subscribe first");
       return;
     }
 
@@ -190,7 +209,25 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          {/* Upload + Input area */}
+          {/* Subscription check */}
+          {checkingSub ? null : !subscription?.subscribed && (
+            <div className="mb-8 rounded-xl border border-amber-200 bg-amber-50 p-6 text-center">
+              <Sparkles className="mx-auto mb-3 h-8 w-8 text-amber-500" />
+              <h2 className="text-lg font-semibold text-gray-900">
+                Subscribe to Start Tailoring
+              </h2>
+              <p className="mt-2 text-sm text-gray-600">
+                You need an active plan to use the resume tailor.
+              </p>
+              <a
+                href="/pricing"
+                className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary-600 px-6 py-2.5 text-sm font-semibold text-white shadow-lg transition-all hover:bg-primary-700"
+              >
+                View Plans
+              </a>
+            </div>
+          )}
+
           <div className="grid gap-8 lg:grid-cols-2">
             {/* Resume upload */}
             <div
@@ -292,10 +329,10 @@ export default function DashboardPage() {
           <div className="mt-8 text-center">
             <button
               onClick={handleSubmit}
-              disabled={loading || !file}
+              disabled={loading || !file || !subscription?.subscribed}
               className={cn(
                 "inline-flex items-center gap-2 rounded-full px-10 py-3.5 text-base font-semibold shadow-lg transition-all",
-                loading || !file
+                loading || !file || !subscription?.subscribed
                   ? "cursor-not-allowed bg-gray-300 text-gray-500"
                   : "bg-primary-600 text-white hover:bg-primary-700 hover:shadow-xl"
               )}
