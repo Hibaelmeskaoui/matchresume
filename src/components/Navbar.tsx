@@ -4,6 +4,12 @@ import Link from "next/link";
 import { useState } from "react";
 import { Menu, X, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  SignedIn,
+  SignedOut,
+  SignInButton,
+  UserButton,
+} from "@clerk/nextjs";
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -34,18 +40,36 @@ export default function Navbar() {
             >
               Pricing
             </Link>
-            <Link
-              href="/sign-in"
-              className="text-sm font-medium text-gray-600 transition-colors hover:text-gray-900"
-            >
-              Sign In
-            </Link>
-            <Link
-              href="/pricing"
-              className="rounded-full bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary-700 hover:shadow-md"
-            >
-              Get Started
-            </Link>
+
+            <SignedIn>
+              <Link
+                href="/dashboard"
+                className="text-sm font-medium text-gray-600 transition-colors hover:text-gray-900"
+              >
+                Dashboard
+              </Link>
+              <UserButton
+                appearance={{
+                  elements: {
+                    avatarBox: "h-8 w-8",
+                  },
+                }}
+              />
+            </SignedIn>
+
+            <SignedOut>
+              <SignInButton mode="modal">
+                <button className="text-sm font-medium text-gray-600 transition-colors hover:text-gray-900">
+                  Sign In
+                </button>
+              </SignInButton>
+              <Link
+                href="/sign-up"
+                className="rounded-full bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary-700 hover:shadow-md"
+              >
+                Get Started
+              </Link>
+            </SignedOut>
           </div>
 
           {/* Mobile toggle */}
@@ -80,20 +104,37 @@ export default function Navbar() {
           >
             Pricing
           </Link>
-          <Link
-            href="/sign-in"
-            onClick={() => setMobileOpen(false)}
-            className="block rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
-          >
-            Sign In
-          </Link>
-          <Link
-            href="/pricing"
-            onClick={() => setMobileOpen(false)}
-            className="block rounded-full bg-primary-600 px-5 py-2.5 text-center text-sm font-semibold text-white"
-          >
-            Get Started
-          </Link>
+
+          <SignedIn>
+            <Link
+              href="/dashboard"
+              onClick={() => setMobileOpen(false)}
+              className="block rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
+            >
+              Dashboard
+            </Link>
+            <hr className="border-gray-100" />
+            <div className="px-3 py-2">
+              <UserButton afterSignOutUrl="/" />
+            </div>
+          </SignedIn>
+
+          <SignedOut>
+            <Link
+              href="/sign-in"
+              onClick={() => setMobileOpen(false)}
+              className="block rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
+            >
+              Sign In
+            </Link>
+            <Link
+              href="/sign-up"
+              onClick={() => setMobileOpen(false)}
+              className="block rounded-full bg-primary-600 px-5 py-2.5 text-center text-sm font-semibold text-white"
+            >
+              Get Started
+            </Link>
+          </SignedOut>
         </div>
       </div>
     </nav>
