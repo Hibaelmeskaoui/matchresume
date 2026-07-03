@@ -27,8 +27,13 @@ export default function DashboardPage() {
     resumesLeft?: number;
   } | null>(null);
   const [checkingSub, setCheckingSub] = useState(true);
+  const [freeTrialUsed, setFreeTrialUsed] = useState(false);
+  const [freeTrialReady, setFreeTrialReady] = useState(false);
 
   useEffect(() => {
+    const used = localStorage.getItem("matchresume_free_trial") === "true";
+    setFreeTrialUsed(used);
+    setFreeTrialReady(true);
     fetch("/api/check-subscription")
       .then((r) => r.json())
       .then((data) => setSubscription(data))
@@ -65,6 +70,8 @@ export default function DashboardPage() {
     setParsingFile(false);
   };
 
+  const canUseFreeTrial = !subscription?.subscribed && !freeTrialUsed;
+
   const handleSubmit = async () => {
     if (!file) {
       setError("Please upload a resume");
@@ -75,8 +82,8 @@ export default function DashboardPage() {
       return;
     }
 
-    if (!subscription?.subscribed) {
-      setError("Please subscribe first");
+    if (!subscription?.subscribed && freeTrialUsed) {
+      setError("Free trial used — please subscribe to continue");
       return;
     }
 
@@ -100,6 +107,12 @@ export default function DashboardPage() {
 
       const data = await res.json();
       setResult(data);
+
+      // Mark free trial as used after successful generation
+      if (!subscription?.subscribed && !freeTrialUsed) {
+        localStorage.setItem("matchresume_free_trial", "true");
+        setFreeTrialUsed(true);
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Something went wrong";
       setError(msg);
@@ -209,15 +222,15 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          {/* Subscription check */}
-          {checkingSub ? null : !subscription?.subscribed && (
+          {/* Subscription / Free trial status */}
+          {checkingSub || !freeTrialReady ? null : !subscription?.subscribed && freeTrialUsed && (
             <div className="mb-8 rounded-xl border border-amber-200 bg-amber-50 p-6 text-center">
               <Sparkles className="mx-auto mb-3 h-8 w-8 text-amber-500" />
               <h2 className="text-lg font-semibold text-gray-900">
-                Subscribe to Start Tailoring
+                Subscribe to Continue
               </h2>
               <p className="mt-2 text-sm text-gray-600">
-                You need an active plan to use the resume tailor.
+                You've used your free trial. Subscribe to keep tailoring resumes.
               </p>
               <a
                 href="/pricing"
@@ -225,6 +238,19 @@ export default function DashboardPage() {
               >
                 View Plans
               </a>
+            </div>
+          )}
+
+          {/* Free trial banner */}
+          {checkingSub || !freeTrialReady ? null : !subscription?.subscribed && !freeTrialUsed && (
+            <div className="mb-8 rounded-xl border border-accent-200 bg-accent-50 p-6 text-center">
+              <Sparkles className="mx-auto mb-3 h-8 w-8 text-accent-500" />
+              <h2 className="text-lg font-semibold text-gray-900">
+                🎉 Free Trial — Try It Once!
+              </h2>
+              <p className="mt-2 text-sm text-gray-600">
+                No credit card needed. Tailor one resume for free, then subscribe to unlock unlimited use.
+              </p>
             </div>
           )}
 
@@ -329,10 +355,10 @@ export default function DashboardPage() {
           <div className="mt-8 text-center">
             <button
               onClick={handleSubmit}
-              disabled={loading || !file || !subscription?.subscribed}
+              disabled={loading || !file || (!subscription?.subscribed && freeTrialUsed)}
               className={cn(
                 "inline-flex items-center gap-2 rounded-full px-10 py-3.5 text-base font-semibold shadow-lg transition-all",
-                loading || !file || !subscription?.subscribed
+                loading || !file || (!subscription?.subscribed && freeTrialUsed)
                   ? "cursor-not-allowed bg-gray-300 text-gray-500"
                   : "bg-primary-600 text-white hover:bg-primary-700 hover:shadow-xl"
               )}
@@ -391,10 +417,8 @@ export default function DashboardPage() {
                       PDF
                     </button>
                   </div>
-                  <div className="mt-4 max-h-60 overflow-y-auto rounded-lg bg-gray-50 p-4 text-xs leading-relaxed text-gray-600">
-                    <pre className="whitespace-pre-wrap font-sans">
-                      {result.tailoredResume}
-                    </pre>
+                  <div className="mt-4 max-h-80 overflow-y-auto rounded-lg border border-gray-100 bg-white p-6 text-sm leading-relaxed text-gray-800 shadow-inner">
+                    <RenderPreview content={result.tailoredResume} />
                   </div>
                 </div>
 
@@ -427,10 +451,8 @@ export default function DashboardPage() {
                       PDF
                     </button>
                   </div>
-                  <div className="mt-4 max-h-60 overflow-y-auto rounded-lg bg-gray-50 p-4 text-xs leading-relaxed text-gray-600">
-                    <pre className="whitespace-pre-wrap font-sans">
-                      {result.coverLetter}
-                    </pre>
+                  <div className="mt-4 max-h-80 overflow-y-auto rounded-lg border border-gray-100 bg-white p-6 text-sm leading-relaxed text-gray-800 shadow-inner">
+                    <RenderPreview content={result.coverLetter} />
                   </div>
                 </div>
               </div>
@@ -456,5 +478,51 @@ export default function DashboardPage() {
       </main>
       <Footer />
     </>
+  );
+}
+
+function RenderPreview({ content }: { content: string }) {
+  const lines = content.split("\n");
+
+  return (
+    <div className="space-y-0">
+      {lines.map((line, i) => {
+        // Empty line → spacing
+        if (!line.trim()) {
+          return <div key={i} className="h-3" />;
+        }
+
+        // Bold markers → formatted heading
+        const boldMatch = line.match(/^\*\*(.+?)\*\*$/);
+        if (boldMatch) {
+          return (
+            <p key={i} className="mb-1 mt-2 font-bold text-gray-900 first:mt-0" style={{ fontSize: "1rem" }}>
+              {boldMatch[1]}
+            </p>
+          );
+        }
+
+        // Bold markers at start of line (inline)
+        const inlineBold = line.replace(/\*\*(.+?)\*\*/g, (_, boldText) => boldText);
+
+        // Bullet points
+        if (line.trimStart().startsWith("-") || line.trimStart().startsWith("•")) {
+          const bulletText = line.trimStart().replace(/^[-•]\s*/, "");
+          return (
+            <div key={i} className="flex gap-2 pl-4">
+              <span className="mt-0.5 text-gray-400">•</span>
+              <span className="flex-1">{inlineBold}</span>
+            </div>
+          );
+        }
+
+        // Normal text
+        return (
+          <p key={i} className="text-gray-700">
+            {inlineBold}
+          </p>
+        );
+      })}
+    </div>
   );
 }

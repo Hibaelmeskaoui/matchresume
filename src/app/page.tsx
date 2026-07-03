@@ -12,6 +12,7 @@ import {
   Link2,
   Wand2,
   Download,
+  Edit3,
 } from "lucide-react";
 
 export default function Home() {
@@ -33,18 +34,18 @@ export default function Home() {
                 <span className="text-primary-600">AI-Tailored</span> Resumes
               </h1>
               <p className="mt-6 text-lg leading-relaxed text-gray-600 sm:text-xl">
-                Upload your resume, paste a job link, and get a perfectly
-                tailored resume + cover letter in seconds. No more manual
-                tweaking for every application.
+                Upload your resume, describe the job you want, and get a
+                perfectly tailored resume + cover letter in seconds. No more
+                manual tweaking for every application.
               </p>
               <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-                <Link
-                  href="/pricing"
+                <a
+                  href="/dashboard"
                   className="inline-flex items-center gap-2 rounded-full bg-primary-600 px-8 py-3.5 text-base font-semibold text-white shadow-lg transition-all hover:bg-primary-700 hover:shadow-xl"
                 >
                   Tailor Your Resume Now
                   <ArrowRight className="h-4 w-4" />
-                </Link>
+                </a>
                 <a
                   href="#how-it-works"
                   className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-8 py-3.5 text-base font-semibold text-gray-700 transition-all hover:bg-gray-50 hover:shadow-md"
@@ -69,7 +70,7 @@ export default function Home() {
             </div>
           </div>
           {/* Decorative gradient */}
-          <div className="absolute -bottom-20 left-1/2 h-80 w-[800px] -translate-x-1/2 rounded-full bg-gradient-to-b from-primary-100/50 to-transparent blur-3xl" />
+          <div className="absolute -bottom-20 left-1/2 h-80 w-[800px] -translate-x-1/2 rounded-full bg-gradient-to-b from-primary-100/50 to-transparent blur-3xl pointer-events-none" />
         </section>
 
         {/* How It Works */}
@@ -80,7 +81,7 @@ export default function Home() {
                 Three Simple Steps
               </h2>
               <p className="mt-4 text-lg text-gray-600">
-                No account needed to try. Just upload, paste, and download.
+                No account needed to try. Just upload, describe, and download.
               </p>
             </div>
             <div className="mt-16 grid gap-8 md:grid-cols-3">
@@ -92,9 +93,9 @@ export default function Home() {
                   step: "01",
                 },
                 {
-                  icon: Link2,
-                  title: "Paste a Job Link",
-                  desc: "Drop the job description URL or paste the text. Our AI analyzes what the employer wants.",
+                  icon: Edit3,
+                  title: "Describe the Job",
+                  desc: "Tell us about the role you're targeting or paste the description. Our AI analyzes what the employer wants.",
                   step: "02",
                 },
                 {
@@ -104,9 +105,10 @@ export default function Home() {
                   step: "03",
                 },
               ].map((item) => (
-                <div
+                <Link
                   key={item.step}
-                  className="group relative rounded-2xl border border-gray-100 bg-white p-8 shadow-sm transition-all hover:shadow-lg hover:border-primary-100"
+                  href="/dashboard"
+                  className="group relative block rounded-2xl border border-gray-100 bg-white p-8 shadow-sm transition-all hover:shadow-lg hover:border-primary-100"
                 >
                   <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary-50 text-primary-600">
                     <item.icon className="h-6 w-6" />
@@ -120,7 +122,7 @@ export default function Home() {
                   <p className="text-sm leading-relaxed text-gray-600">
                     {item.desc}
                   </p>
-                </div>
+                </Link>
               ))}
             </div>
           </div>
@@ -215,13 +217,13 @@ export default function Home() {
                 each application in seconds.
               </p>
               <div className="mt-10">
-                <Link
-                  href="/pricing"
+                <a
+                  href="/dashboard"
                   className="inline-flex items-center gap-2 rounded-full bg-primary-600 px-8 py-3.5 text-base font-semibold text-white shadow-lg transition-all hover:bg-primary-700 hover:shadow-xl"
                 >
                   Get Started Now
                   <ArrowRight className="h-4 w-4" />
-                </Link>
+                </a>
               </div>
             </div>
           </div>
