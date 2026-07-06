@@ -3,13 +3,13 @@
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import Link from "next/link";
 import { CheckCircle, Sparkles } from "lucide-react";
-import { cn, formatPrice } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 const plans = [
   {
-    id: "oneTime",
+    id: "singleResume",
+    variantKey: "singleResume" as const,
     name: "Single Resume",
     price: 9.99,
     description: "Perfect for one-off tailoring needs.",
@@ -24,7 +24,8 @@ const plans = [
     cta: "Get One Resume",
   },
   {
-    id: "monthly",
+    id: "unlimitedMonthly",
+    variantKey: "unlimitedMonthly" as const,
     name: "Unlimited",
     price: 19.0,
     description: "For active job seekers applying everywhere.",
@@ -43,20 +44,22 @@ const plans = [
 
 export default function PricingPage() {
   const [loading, setLoading] = useState<string | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<"stripe" | "paypal">(
-    "stripe"
-  );
 
-  async function handleStripeCheckout(priceId: string, planId: string) {
+  async function handleCheckout(variantKey: string, planId: string) {
     setLoading(planId);
     try {
-      // For now, redirect to a placeholder — webhook setup needed for full Stripe
-      // In production, call your API to create a Stripe Checkout Session
       const res = await fetch("/api/create-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priceId }),
+        body: JSON.stringify({ variantKey }),
       });
+
+      if (res.status === 401) {
+        // Redirect to sign in
+        window.location.href = "/sign-in?redirect=/pricing";
+        return;
+      }
+
       const data = await res.json();
       if (data.url) {
         window.location.href = data.url;
@@ -88,34 +91,6 @@ export default function PricingPage() {
             </p>
           </div>
 
-          {/* Payment method toggle */}
-          <div className="mt-10 flex justify-center">
-            <div className="inline-flex rounded-full border border-gray-200 bg-gray-50 p-1">
-              <button
-                onClick={() => setPaymentMethod("stripe")}
-                className={cn(
-                  "rounded-full px-5 py-2 text-sm font-medium transition-all",
-                  paymentMethod === "stripe"
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-500 hover:text-gray-700"
-                )}
-              >
-                💳 Card (Stripe)
-              </button>
-              <button
-                onClick={() => setPaymentMethod("paypal")}
-                className={cn(
-                  "rounded-full px-5 py-2 text-sm font-medium transition-all",
-                  paymentMethod === "paypal"
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-500 hover:text-gray-700"
-                )}
-              >
-                🅿️ PayPal
-              </button>
-            </div>
-          </div>
-
           {/* Pricing cards */}
           <div className="mt-10 grid gap-8 md:grid-cols-2 md:gap-6 lg:mx-auto lg:max-w-4xl">
             {plans.map((plan) => (
@@ -142,7 +117,7 @@ export default function PricingPage() {
                     ${plan.price}
                   </span>
                   <span className="text-sm text-gray-500">
-                    {plan.id === "oneTime" ? "one-time" : "/month"}
+                    {plan.id === "singleResume" ? "one-time" : "/month"}
                   </span>
                 </div>
                 <ul className="mt-6 space-y-3">
@@ -154,13 +129,7 @@ export default function PricingPage() {
                   ))}
                 </ul>
                 <button
-                  onClick={() => {
-                    const pid =
-                      plan.id === "oneTime"
-                        ? process.env.NEXT_PUBLIC_STRIPE_PRICE_ONETIME_ID || "price_onetime"
-                        : process.env.NEXT_PUBLIC_STRIPE_PRICE_MONTHLY_ID || "price_monthly";
-                    handleStripeCheckout(pid, plan.id);
-                  }}
+                  onClick={() => handleCheckout(plan.variantKey, plan.id)}
                   disabled={loading === plan.id}
                   className={cn(
                     "mt-8 w-full rounded-full py-3 text-sm font-semibold transition-all",
@@ -179,8 +148,7 @@ export default function PricingPage() {
           {/* Trust line */}
           <div className="mt-12 text-center">
             <p className="text-sm text-gray-500">
-              🔒 Secure checkout via {paymentMethod === "stripe" ? "Stripe" : "PayPal"}. 
-              30-day satisfaction guarantee. No questions asked refunds.
+              🔒 Secure checkout powered by Lemon Squeezy. 30-day satisfaction guarantee.
             </p>
           </div>
         </div>

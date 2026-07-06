@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { createCheckoutSession, PRICES } from "@/lib/stripe";
+import { createCheckout, PRODUCTS } from "@/lib/lemonsqueezy";
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,18 +13,25 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!process.env.STRIPE_SECRET_KEY) {
+    if (!process.env.LEMONSQUEEZY_API_KEY) {
       return NextResponse.json(
-        { message: "Stripe is not configured" },
+        { message: "Payment is not configured yet" },
         { status: 500 }
       );
     }
 
-    const { priceId } = await req.json();
+    const { variantKey } = await req.json();
 
-    if (!priceId || !Object.values(PRICES).some((p) => p.id === priceId)) {
+    // Map frontend plan key to actual variant ID
+    const validKeys: Record<string, string> = {
+      singleResume: PRODUCTS.singleResume.variantId,
+      unlimitedMonthly: PRODUCTS.unlimitedMonthly.variantId,
+    };
+
+    const variantId = validKeys[variantKey];
+    if (!variantId) {
       return NextResponse.json(
-        { message: "Invalid price ID" },
+        { message: "Invalid product variant" },
         { status: 400 }
       );
     }
@@ -38,13 +45,9 @@ export async function POST(req: NextRequest) {
     const userData = await userRes.json();
     const email = userData.email_addresses?.[0]?.email_address || "no-email@example.com";
 
-    const session = await createCheckoutSession(
-      priceId,
-      userId,
-      email
-    );
+    const checkout = await createCheckout(variantId, userId, email);
 
-    return NextResponse.json({ url: session.url });
+    return NextResponse.json({ url: checkout.attributes.url });
   } catch (error) {
     console.error("Checkout error:", error);
     return NextResponse.json(
